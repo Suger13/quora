@@ -152,6 +152,86 @@ question.post('/:questionId/vote',async (req, res) => {
     }
 })
 
+//get answer from question
+question.get('/:questionId/answer', async (req, res) => {
+    try{
+        if (req.query.answerId){
+            const data = await pool.query(`select * from answer where question_id = $1 and answer_id = $2`, [ req.params.questionId, req.query.answerId ])
+            return res.json({
+                data : data.rows[0]
+            })
+        }
+
+        const data = await pool.query(`select * from answer where question_id = $1`, [ req.params.questionId ])
+        return res.json({
+            data : data.rows
+        })
+    }catch(err){
+        throw(err)
+        return res.status(400).json({
+            msg : "invalid input"
+        })
+    }
+})
+
+//create answer
+question.post('/:questionId/answer', async ( req, res ) => {
+    try{
+        await pool.query(`insert into answer(
+            question_id,
+            user_id,
+            content,
+            video_url,
+            image_url,
+            created_at,
+            updated_at
+        ) values(
+            $1, $2, $3, $4, $5, $6, $7
+        )`, [
+            req.params.questionId,
+            req.body.user_id,
+            req.body.content,
+            req.body.video_url,
+            req.body.image_url,
+            new Date(),
+            new Date()
+        ])
+
+        return res.status(201).json({
+            msg : "answer has been created"
+        })
+    }catch(err){
+        return res.status(400).json({
+            msg : "invalid input"
+        })
+    }
+})
+
+//edit answer
+question.put('/:questionId/answer/:answerId', async (req, res) => {
+    try{
+        await pool.query(`update table
+            set content = $1,
+            video_url = $2,
+            image_url = $3,
+            updated_at = $4
+            where answer_id = $4
+        `, [ 
+            req.body.content,
+            req.body.video_url,
+            req.body.image_url,
+            new Date()
+         ])
+    }catch(err){
+        return res.json({
+            msg : "invalid input"
+        })
+    }
+})
+
+
+
+
 //delete question
 question.delete('/:questionId', async( req, res ) => {
     try{
@@ -166,5 +246,16 @@ question.delete('/:questionId', async( req, res ) => {
         })
     }
 })
+
+
+
+
+
+
+
+
+
+
+
 
 export default question

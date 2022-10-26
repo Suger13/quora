@@ -16,7 +16,7 @@ app.use(cors())
 app.get('/', (req,res) => {
     res.send("Hello world")
 })
-app.use('/user', user)
+app.use('/users', user)
 app.use('/question', question)
 
 app.listen(port, () => {
