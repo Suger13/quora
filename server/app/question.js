@@ -132,22 +132,28 @@ question.put('/:questionId', async (req, res) => {
 
 //Vote to Question
 question.post('/:questionId/vote',async (req, res) => {
-    const hasData = await pool.query(`select * from question_vote where question_id = $1 and user_id = $2`, [ req.params.questionId, req.body.user_id ])
-    const isUndefined = hasData.rows[0] === undefined
-
-    if(isUndefined){
-        pool.query(`update question_vote 
-        set vote_id = $1
-        where user_id = $2
-        and question_id = $3`, [ req.body.vote_id, req.body.user_id, req.params.questionId ])
-        return res.status(202).json({
-            msg : "vote has been updated"
-        })
-    } else {
-        await pool.query(`insert into question_vote(user_id, question_id, vote_id)
-        values ( $1, $2, $3 )`, [ req.body.user_id, req.params.questionId, req.body.vote_id ])
-        return res.status(201).json({
-            msg : "question vote success!"
+    try{
+        const hasData = await pool.query(`select * from question_vote where question_id = $1 and user_id = $2`, [ req.params.questionId, req.body.user_id ])
+        const isUndefined = hasData.rows[0] === undefined
+    
+        if(isUndefined){
+            pool.query(`update question_vote 
+            set vote_id = $1
+            where user_id = $2
+            and question_id = $3`, [ req.body.vote_id, req.body.user_id, req.params.questionId ])
+            return res.status(202).json({
+                msg : "vote has been updated"
+            })
+        } else {
+            await pool.query(`insert into question_vote(user_id, question_id, vote_id)
+            values ( $1, $2, $3 )`, [ req.body.user_id, req.params.questionId, req.body.vote_id ])
+            return res.status(201).json({
+                msg : "question vote success!"
+            })
+        }
+    } catch(err){
+        return res.status(400).json({
+            msg : "invalid input"
         })
     }
 })
@@ -167,7 +173,6 @@ question.get('/:questionId/answer', async (req, res) => {
             data : data.rows
         })
     }catch(err){
-        throw(err)
         return res.status(400).json({
             msg : "invalid input"
         })
@@ -222,6 +227,10 @@ question.put('/:questionId/answer/:answerId', async (req, res) => {
             req.body.image_url,
             new Date()
          ])
+
+         return res.status(200).json({
+            msg : "answer has been updated"
+         })
     }catch(err){
         return res.json({
             msg : "invalid input"
@@ -229,7 +238,39 @@ question.put('/:questionId/answer/:answerId', async (req, res) => {
     }
 })
 
+//vote to answer
+question.post('/:questionId/answer/:answerId', async(req, res) => {
+    try{
+        const hasData = await pool.query(`select * from answer_vote where user_id = $1 and answer_id = $2`, [ req.body.user_id, req.params.answerId ])
+        if(hasData.rows[0] !== undefined){
+            await pool.query(`update answer_vote
+                set vote_id = $1
+            `, [req.body.vote_id])
+            
+            return res.status(200).json({
+                msg : `vote to answer ${req.params.answerId} has been update`
+            })
+        }
 
+        await pool.query(`insert into answer_vote(user_id, answer_id, vote_id)
+            values($1, $2, $3)
+        `, [ 
+            req.body.user_id,
+            req.params.answerId,
+            req.body.vote_id
+         ])
+
+         return res.json({
+            msg : "answer vote has been added"
+         })
+
+        
+    }catch(err){
+        return res.status(400).json({
+            msg : "invalid input"
+        })
+    }
+})
 
 
 //delete question
